@@ -1,6 +1,6 @@
 {
     "name": "loot-grab",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "A 3D web-based loot collection game with fake multiplayer",
     "main": "src/index.js",
     "scripts": {

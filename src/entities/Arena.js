@@ -1,418 +1,178 @@
 import * as THREE from 'three';
-import { Logger } from '../utils/Logger';
 
 export class Arena {
     constructor(scene) {
-        try {
-            Logger.info('Initializing arena');
-            
-            this.scene = scene;
-            this.size = 50; // 50m x 50m
-            this.height = 1; // 1m high blocks
-            this.cubeSize = 5; // 5m x 5m blocks
-            this.platforms = [];
-            this.createArena();
-            Logger.debug('Arena created successfully');
-        } catch (error) {
-            Logger.error('Failed to initialize arena', error);
-            throw error;
-        }
+        this.scene = scene;
+        this.size = 50;
+        this.height = 10;
+        this.cubeSize = 1;
+        this.platforms = [];
+        this.createArena();
     }
 
     createArena() {
-        try {
-            Logger.debug('Creating arena components');
-            
-            // Create base layer (10x10 grid)
-            this.createBaseLayer();
-            
-            // Create elevated platforms
-            this.createElevatedPlatforms();
-            
-            // Create specific platforms
-            this.createSpecificPlatforms();
-            
-            // Create obstacles
-            this.createObstacles();
-            
-            // Create void effect
-            this.createVoidEffect();
-            
-            // Add lighting
-            this.addLighting();
-            
-            Logger.debug('Arena components created successfully');
-        } catch (error) {
-            Logger.error('Failed to create arena components', error);
-            throw error;
-        }
+        // Create base layer
+        this.createBaseLayer();
+
+        // Create elevated platforms
+        this.createElevatedPlatforms();
+
+        // Create obstacles
+        this.createObstacles();
+
+        // Create void effect
+        this.createVoidEffect();
+
+        // Add lighting
+        this.addLighting();
     }
 
     createBaseLayer() {
-        try {
-            Logger.debug('Creating base layer');
-            
-            // Load textures
-            const textureLoader = new THREE.TextureLoader();
-            const rockGrassTexture = textureLoader.load('/assets/rock_grass.png');
-            const crackedStoneTexture = textureLoader.load('/assets/cracked_stone.png');
-            
-            // Create base material
-            const baseMaterial = new THREE.MeshPhongMaterial({
-                map: rockGrassTexture,
-                bumpMap: rockGrassTexture,
-                bumpScale: 0.1
-            });
-            
-            // Create 10x10 grid of cubes
-            for (let x = 0; x < 10; x++) {
-                for (let z = 0; z < 10; z++) {
-                    const geometry = new THREE.BoxGeometry(this.cubeSize, this.height, this.cubeSize);
-                    const material = baseMaterial.clone();
-                    
-                    // Randomly add cracked stone decal
-                    if (Math.random() < 0.5) {
-                        material.map = crackedStoneTexture;
-                    }
-                    
-                    const cube = new THREE.Mesh(geometry, material);
-                    cube.position.set(
-                        x * this.cubeSize - this.size / 2,
-                        0,
-                        z * this.cubeSize - this.size / 2
-                    );
-                    cube.castShadow = true;
-                    cube.receiveShadow = true;
-                    
-                    // Add collision box
-                    cube.userData.collisionBox = new THREE.Box3().setFromObject(cube);
-                    
-                    this.scene.add(cube);
-                    this.platforms.push(cube);
-                }
+        const baseGeometry = new THREE.BoxGeometry(this.cubeSize, this.cubeSize, this.cubeSize);
+        const baseMaterial = new THREE.MeshStandardMaterial({
+            color: 0x808080,
+            roughness: 0.8,
+            metalness: 0.2
+        });
+
+        for (let x = -this.size / 2; x < this.size / 2; x += this.cubeSize) {
+            for (let z = -this.size / 2; z < this.size / 2; z += this.cubeSize) {
+                const cube = new THREE.Mesh(baseGeometry, baseMaterial);
+                cube.position.set(x, -this.cubeSize / 2, z);
+                cube.castShadow = true;
+                cube.receiveShadow = true;
+                this.scene.add(cube);
+                this.platforms.push(cube);
             }
-            
-            Logger.debug('Base layer created', { numCubes: this.platforms.length });
-        } catch (error) {
-            Logger.error('Failed to create base layer', error);
-            throw error;
         }
     }
 
     createElevatedPlatforms() {
-        try {
-            Logger.debug('Creating elevated platforms');
-            
-            // Create 20 random elevated cubes
-            for (let i = 0; i < 20; i++) {
-                const height = 2 + Math.floor(Math.random() * 2); // 2m or 3m high
-                const x = Math.random() * this.size - this.size / 2;
-                const z = Math.random() * this.size - this.size / 2;
-                
-                this.createElevatedCube(x, height, z);
-            }
-            
-            Logger.debug('Elevated platforms created', { numPlatforms: 20 });
-        } catch (error) {
-            Logger.error('Failed to create elevated platforms', error);
-            throw error;
-        }
-    }
+        const platformGeometry = new THREE.BoxGeometry(this.cubeSize, this.cubeSize, this.cubeSize);
+        const platformMaterial = new THREE.MeshStandardMaterial({
+            color: 0x808080,
+            roughness: 0.8,
+            metalness: 0.2
+        });
 
-    createSpecificPlatforms() {
-        try {
-            Logger.debug('Creating specific platforms');
-            
-            // Platform 1: 3 connected 2m-high cubes at X=10, Y=2, Z=10
-            for (let x = 0; x < 3; x++) {
-                this.createElevatedCube(10 + x * 5, 2, 10);
-            }
-            
-            // Platform 2: 4 connected 2m-high cubes at X=30, Y=2, Z=30
-            for (let x = 0; x < 4; x++) {
-                this.createElevatedCube(30 + x * 5, 2, 30);
-            }
-            
-            // Platform 3: 2 connected 3m-high cubes at X=20, Y=3, Z=40
-            for (let x = 0; x < 2; x++) {
-                this.createElevatedCube(20 + x * 5, 3, 40);
-            }
-            
-            Logger.debug('Specific platforms created');
-        } catch (error) {
-            Logger.error('Failed to create specific platforms', error);
-            throw error;
-        }
-    }
+        // Create 10-15 elevated platforms
+        const numPlatforms = 10 + Math.floor(Math.random() * 6);
+        for (let i = 0; i < numPlatforms; i++) {
+            const height = 1 + Math.floor(Math.random() * 2); // 2-3 blocks high
+            const x = (Math.random() - 0.5) * (this.size - 4);
+            const z = (Math.random() - 0.5) * (this.size - 4);
 
-    createElevatedCube(x, height, z) {
-        try {
-            const geometry = new THREE.BoxGeometry(this.cubeSize, height, this.cubeSize);
-            const material = new THREE.MeshPhongMaterial({
-                map: new THREE.TextureLoader().load('/assets/rock_grass.png'),
-                bumpMap: new THREE.TextureLoader().load('/assets/rock_grass.png'),
-                bumpScale: 0.1
-            });
-            
-            const cube = new THREE.Mesh(geometry, material);
-            cube.position.set(x, height / 2, z);
-            cube.castShadow = true;
-            cube.receiveShadow = true;
-            
-            // Add collision box
-            cube.userData.collisionBox = new THREE.Box3().setFromObject(cube);
-            
-            this.scene.add(cube);
-            this.platforms.push(cube);
-        } catch (error) {
-            Logger.error('Failed to create elevated cube', error);
-            throw error;
+            for (let h = 0; h < height; h++) {
+                const cube = new THREE.Mesh(platformGeometry, platformMaterial);
+                cube.position.set(x, h - this.cubeSize / 2, z);
+                cube.castShadow = true;
+                cube.receiveShadow = true;
+                this.scene.add(cube);
+                this.platforms.push(cube);
+            }
         }
     }
 
     createObstacles() {
-        try {
-            Logger.debug('Creating obstacles');
-            
-            // Create 5-7 obstacles
-            const numObstacles = 5 + Math.floor(Math.random() * 3);
-            
-            for (let i = 0; i < numObstacles; i++) {
-                const x = Math.random() * this.size - this.size / 2;
-                const z = Math.random() * this.size - this.size / 2;
-                const height = 1 + Math.floor(Math.random() * 2); // 1m or 2m high
-                
-                const geometry = new THREE.BoxGeometry(this.cubeSize, height, this.cubeSize);
-                const material = new THREE.MeshPhongMaterial({
-                    color: 0x808080,
-                    map: new THREE.TextureLoader().load('/assets/cracked_stone.png')
-                });
-                
-                const obstacle = new THREE.Mesh(geometry, material);
-                obstacle.position.set(x, height / 2, z);
-                obstacle.castShadow = true;
-                obstacle.receiveShadow = true;
-                
-                // Add collision box
-                obstacle.userData.collisionBox = new THREE.Box3().setFromObject(obstacle);
-                
-                this.scene.add(obstacle);
-                this.platforms.push(obstacle);
-            }
-            
-            Logger.debug('Obstacles created', { numObstacles });
-        } catch (error) {
-            Logger.error('Failed to create obstacles', error);
-            throw error;
+        const obstacleGeometry = new THREE.BoxGeometry(this.cubeSize, this.cubeSize, this.cubeSize);
+        const obstacleMaterial = new THREE.MeshStandardMaterial({
+            color: 0x404040,
+            roughness: 0.9,
+            metalness: 0.1
+        });
+
+        // Create 5-7 obstacles
+        const numObstacles = 5 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < numObstacles; i++) {
+            const x = (Math.random() - 0.5) * (this.size - 4);
+            const z = (Math.random() - 0.5) * (this.size - 4);
+
+            const cube = new THREE.Mesh(obstacleGeometry, obstacleMaterial);
+            cube.position.set(x, 0, z);
+            cube.castShadow = true;
+            cube.receiveShadow = true;
+            this.scene.add(cube);
+            this.platforms.push(cube);
         }
     }
 
     createVoidEffect() {
-        try {
-            Logger.debug('Creating void effect');
-            
-            // Create skybox
-            const skyboxGeometry = new THREE.BoxGeometry(1000, 1000, 1000);
-            const skyboxMaterials = [];
-            
-            // Load skybox textures
-            const textureLoader = new THREE.TextureLoader();
-            const skyboxTextures = {
-                top: textureLoader.load('/assets/sky_top.png'),
-                bottom: textureLoader.load('/assets/sky_bottom.png'),
-                left: textureLoader.load('/assets/sky_left.png'),
-                right: textureLoader.load('/assets/sky_right.png'),
-                front: textureLoader.load('/assets/sky_front.png'),
-                back: textureLoader.load('/assets/sky_back.png')
-            };
-            
-            // Create materials for each face
-            for (let face in skyboxTextures) {
-                skyboxMaterials.push(new THREE.MeshBasicMaterial({
-                    map: skyboxTextures[face],
-                    side: THREE.BackSide
-                }));
-            }
-            
-            const skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterials);
-            this.scene.add(skybox);
-            
-            // Create void plane
-            const voidGeometry = new THREE.PlaneGeometry(this.size, this.size);
-            const voidMaterial = new THREE.MeshBasicMaterial({
-                color: 0x000000,
-                transparent: true,
-                opacity: 0.5
-            });
-            const voidPlane = new THREE.Mesh(voidGeometry, voidMaterial);
-            voidPlane.rotation.x = -Math.PI / 2;
-            voidPlane.position.y = -0.1;
-            this.scene.add(voidPlane);
-            
-            // Add red glow
-            const glowGeometry = new THREE.PlaneGeometry(this.size, this.size);
-            const glowMaterial = new THREE.MeshBasicMaterial({
-                color: 0xff0000,
-                transparent: true,
-                opacity: 0.1
-            });
-            const glowPlane = new THREE.Mesh(glowGeometry, glowMaterial);
-            glowPlane.rotation.x = -Math.PI / 2;
-            glowPlane.position.y = -0.05;
-            this.scene.add(glowPlane);
-            
-            Logger.debug('Void effect created');
-        } catch (error) {
-            Logger.error('Failed to create void effect', error);
-            throw error;
-        }
+        // Create void plane
+        const voidGeometry = new THREE.PlaneGeometry(this.size * 2, this.size * 2);
+        const voidMaterial = new THREE.MeshBasicMaterial({
+            color: 0x000000,
+            transparent: true,
+            opacity: 0.5
+        });
+        const voidPlane = new THREE.Mesh(voidGeometry, voidMaterial);
+        voidPlane.rotation.x = -Math.PI / 2;
+        voidPlane.position.y = -this.height;
+        this.scene.add(voidPlane);
+
+        // Add red glow
+        const glowGeometry = new THREE.PlaneGeometry(this.size * 2, this.size * 2);
+        const glowMaterial = new THREE.MeshBasicMaterial({
+            color: 0xFF0000,
+            transparent: true,
+            opacity: 0.1
+        });
+        const glowPlane = new THREE.Mesh(glowGeometry, glowMaterial);
+        glowPlane.rotation.x = -Math.PI / 2;
+        glowPlane.position.y = -this.height + 0.1;
+        this.scene.add(glowPlane);
     }
 
     addLighting() {
-        try {
-            Logger.debug('Adding lighting');
-            
-            // Ambient light
-            const ambientLight = new THREE.AmbientLight(0x404040);
-            this.scene.add(ambientLight);
-            
-            // Directional light (sun)
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-            directionalLight.position.set(10, 20, 10);
-            directionalLight.castShadow = true;
-            directionalLight.shadow.mapSize.width = 2048;
-            directionalLight.shadow.mapSize.height = 2048;
-            directionalLight.shadow.camera.near = 0.5;
-            directionalLight.shadow.camera.far = 100;
-            directionalLight.shadow.camera.left = -25;
-            directionalLight.shadow.camera.right = 25;
-            directionalLight.shadow.camera.top = 25;
-            directionalLight.shadow.camera.bottom = -25;
-            this.scene.add(directionalLight);
-            
-            Logger.debug('Lighting added');
-        } catch (error) {
-            Logger.error('Failed to add lighting', error);
-            throw error;
-        }
+        // Add ambient light
+        const ambientLight = new THREE.AmbientLight(0x404040);
+        this.scene.add(ambientLight);
+
+        // Add directional light (sunlight)
+        const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1);
+        directionalLight.position.set(0, this.height, 0);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 2048;
+        directionalLight.shadow.mapSize.height = 2048;
+        directionalLight.shadow.camera.near = 0.5;
+        directionalLight.shadow.camera.far = this.height * 2;
+        directionalLight.shadow.camera.left = -this.size / 2;
+        directionalLight.shadow.camera.right = this.size / 2;
+        directionalLight.shadow.camera.top = this.size / 2;
+        directionalLight.shadow.camera.bottom = -this.size / 2;
+        this.scene.add(directionalLight);
     }
 
     getRandomSpawnPosition() {
-        try {
-            // Find a random position on a platform
-            let attempts = 0;
-            const maxAttempts = 100;
-            
-            while (attempts < maxAttempts) {
-                const x = Math.random() * this.size - this.size / 2;
-                const z = Math.random() * this.size - this.size / 2;
-                
-                // Check if position is on a platform
-                const position = new THREE.Vector3(x, 0, z);
-                if (this.isOnPlatform(position)) {
-                    position.y = this.getPlatformHeight(position);
-                    Logger.debug('Found valid spawn position', { position });
-                    return position;
-                }
-                
-                attempts++;
-            }
-            
-            // If no valid position found, return a position on the base layer
-            Logger.warn('No valid spawn position found, using base layer');
-            return new THREE.Vector3(
-                Math.random() * this.size - this.size / 2,
-                0,
-                Math.random() * this.size - this.size / 2
-            );
-        } catch (error) {
-            Logger.error('Failed to get random spawn position', error);
-            throw error;
-        }
+        const x = (Math.random() - 0.5) * (this.size - 4);
+        const z = (Math.random() - 0.5) * (this.size - 4);
+        return new THREE.Vector3(x, 0, z);
     }
 
     isOnPlatform(position) {
-        try {
-            // Create a ray from above
-            const ray = new THREE.Ray(
-                new THREE.Vector3(position.x, 10, position.z),
-                new THREE.Vector3(0, -1, 0)
-            );
-            
-            // Check intersection with all platforms
-            for (const platform of this.platforms) {
-                const intersection = new THREE.Vector3();
-                const normal = new THREE.Vector3();
-                
-                if (platform.geometry.type === 'BoxGeometry') {
-                    const box = platform.userData.collisionBox;
-                    if (ray.intersectBox(box, intersection, normal)) {
-                        // Check if we're within the platform's bounds
-                        const platformPos = platform.position;
-                        const halfSize = this.cubeSize / 2;
-                        
-                        if (Math.abs(intersection.x - platformPos.x) <= halfSize &&
-                            Math.abs(intersection.z - platformPos.z) <= halfSize) {
-                            return true;
-                        }
-                    }
-                }
-            }
-            
-            return false;
-        } catch (error) {
-            Logger.error('Failed to check platform collision', error);
-            throw error;
-        }
+        const ray = new THREE.Raycaster();
+        ray.set(position, new THREE.Vector3(0, -1, 0));
+        ray.far = 2;
+
+        const intersects = ray.intersectObjects(this.platforms);
+        return intersects.length > 0;
     }
 
     getPlatformHeight(position) {
-        try {
-            // Create a ray from above
-            const ray = new THREE.Ray(
-                new THREE.Vector3(position.x, 10, position.z),
-                new THREE.Vector3(0, -1, 0)
-            );
-            
-            // Find the highest platform intersection
-            let highestY = 0;
-            
-            for (const platform of this.platforms) {
-                const intersection = new THREE.Vector3();
-                const normal = new THREE.Vector3();
-                
-                if (platform.geometry.type === 'BoxGeometry') {
-                    const box = platform.userData.collisionBox;
-                    if (ray.intersectBox(box, intersection, normal)) {
-                        // Check if we're within the platform's bounds
-                        const platformPos = platform.position;
-                        const halfSize = this.cubeSize / 2;
-                        
-                        if (Math.abs(intersection.x - platformPos.x) <= halfSize &&
-                            Math.abs(intersection.z - platformPos.z) <= halfSize) {
-                            highestY = Math.max(highestY, intersection.y);
-                        }
-                    }
-                }
-            }
-            
-            return highestY;
-        } catch (error) {
-            Logger.error('Failed to get platform height', error);
-            throw error;
+        const ray = new THREE.Raycaster();
+        ray.set(position, new THREE.Vector3(0, -1, 0));
+        ray.far = this.height;
+
+        const intersects = ray.intersectObjects(this.platforms);
+        if (intersects.length > 0) {
+            return intersects[0].point.y;
         }
+        return 0;
     }
 
     dispose() {
-        try {
-            Logger.debug('Disposing arena');
-            this.platforms.forEach(platform => {
-                this.scene.remove(platform);
-            });
-            this.platforms = [];
-        } catch (error) {
-            Logger.error('Failed to dispose arena', error);
-            throw error;
-        }
+        this.platforms.forEach(platform => {
+            this.scene.remove(platform);
+        });
+        this.platforms = [];
     }
 } 

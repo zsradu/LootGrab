@@ -9,7 +9,9 @@ export class UIManager {
             this.playerScore = document.getElementById('player-score');
             this.menuScreen = document.getElementById('menu-screen');
             this.frenzyText = null;
+            this.timerElement = null;
             this.setupFrenzyText();
+            this.setupTimer();
             Logger.debug('UIManager initialized successfully');
         } catch (error) {
             Logger.error('Failed to initialize UIManager', error);
@@ -36,6 +38,44 @@ export class UIManager {
             Logger.debug('Frenzy text setup completed');
         } catch (error) {
             Logger.error('Failed to setup frenzy text', error);
+            throw error;
+        }
+    }
+
+    setupTimer() {
+        try {
+            Logger.debug('Setting up timer display');
+            
+            this.timerElement = document.createElement('div');
+            this.timerElement.style.position = 'absolute';
+            this.timerElement.style.top = '20px';
+            this.timerElement.style.left = '20px';
+            this.timerElement.style.fontSize = '20px';
+            this.timerElement.style.color = 'white';
+            this.timerElement.style.fontFamily = 'Arial, sans-serif';
+            this.timerElement.style.textShadow = '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000';
+            this.timerElement.style.zIndex = '100';
+            this.timerElement.textContent = 'Time: 2:00';
+            
+            document.getElementById('ui-overlay').appendChild(this.timerElement);
+            Logger.debug('Timer display setup completed');
+        } catch (error) {
+            Logger.error('Failed to setup timer display', error);
+            throw error;
+        }
+    }
+
+    updateTimer(gameTime) {
+        try {
+            const remainingTime = Math.max(0, 120 - gameTime); // 120 seconds (2 minutes) - gameTime
+            const minutes = Math.floor(remainingTime / 60);
+            const seconds = Math.floor(remainingTime % 60);
+            const timeString = `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            Logger.debug('Updating timer', { remainingTime, timeString });
+            this.timerElement.textContent = timeString;
+        } catch (error) {
+            Logger.error('Failed to update timer', error);
             throw error;
         }
     }
