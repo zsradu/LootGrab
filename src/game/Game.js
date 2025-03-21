@@ -22,15 +22,10 @@ export class Game {
             Logger.debug('Scene created');
 
             // Create camera
-            this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-            this.camera.position.set(0, 2, 3); // 2m up, 3m back
+            this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+            this.camera.position.set(0, 20, 20);
             this.camera.lookAt(0, 0, 0);
             Logger.debug('Camera created and positioned');
-
-            // Camera follow settings
-            this.cameraOffset = new THREE.Vector3(0, 2, 3);
-            this.cameraLerpFactor = 0.1; // 0.1s lag
-            this.cameraTarget = new THREE.Vector3();
 
             // Create arena
             this.arena = new Arena(this.scene);
@@ -42,7 +37,7 @@ export class Game {
             this.loot = [];
             this.greedBot = null;
             this.scores = {};
-            this.gameTime = 0;
+            this.gameTime = Math.floor(Math.random() * 15);
             this.roundDuration = 120; // 2 minutes
             this.isFrenzy = false;
             this.isGameOver = false;
@@ -143,6 +138,9 @@ export class Game {
             // Update game time
             this.gameTime += deltaTime;
 
+            // Update timer display
+            this.uiManager.updateTimer(this.gameTime);
+
             // Check for frenzy
             if (this.gameTime >= 110 && !this.isFrenzy) { // 1:50
                 Logger.info('Starting Loot Frenzy');
@@ -160,9 +158,6 @@ export class Game {
             this.player.update(deltaTime, this.inputManager);
             Logger.logEntityState(this.player, 'Player');
 
-            // Update camera
-            this.updateCamera(deltaTime);
-
             // Update bots
             this.bots.forEach(bot => {
                 // Create a proper input interface for bots
@@ -173,9 +168,6 @@ export class Game {
                             x: Math.sin(Date.now() * 0.001) * 0.5,
                             z: Math.cos(Date.now() * 0.001) * 0.5
                         };
-                    },
-                    getRotationInput: () => {
-                        return Math.sin(Date.now() * 0.001) * 0.5;
                     },
                     isJumping: () => {
                         // Bots jump randomly
@@ -213,29 +205,6 @@ export class Game {
             }
         } catch (error) {
             Logger.error('Error in game update loop', error);
-            throw error;
-        }
-    }
-
-    updateCamera(deltaTime) {
-        try {
-            // Get player position and rotation
-            const playerPos = this.player.getPosition();
-            const playerRotation = this.player.rotation;
-
-            // Calculate camera target position
-            const angle = THREE.MathUtils.degToRad(playerRotation);
-            this.cameraTarget.x = playerPos.x - Math.sin(angle) * this.cameraOffset.z;
-            this.cameraTarget.y = playerPos.y + this.cameraOffset.y;
-            this.cameraTarget.z = playerPos.z - Math.cos(angle) * this.cameraOffset.z;
-
-            // Smoothly interpolate camera position
-            this.camera.position.lerp(this.cameraTarget, this.cameraLerpFactor);
-
-            // Make camera look at player
-            this.camera.lookAt(playerPos);
-        } catch (error) {
-            Logger.error('Error updating camera', error);
             throw error;
         }
     }
