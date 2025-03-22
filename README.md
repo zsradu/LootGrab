@@ -2,6 +2,8 @@
 
 A 3D web-based loot collection game where players compete against AI bots to collect loot while avoiding the menacing Greed Bot.
 
+I quit this version because it is not going in the direction that I want from this project.
+
 ## Features
 
 - 3D graphics using Three.js
